@@ -9,7 +9,7 @@ const login = async () => {
 
   try {
     const URL = "https://www-cairn-info.rproxy.univ-pau.fr/";
-    const browser = await puppeteer.launch({ headless: false });
+    const browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
 
     await page.goto(URL);
@@ -28,4 +28,4 @@ const login = async () => {
   }
 };
 
-login();
+// login();
