@@ -1,6 +1,6 @@
 import puppeteer from "puppeteer";
 
-export const initRessourcesLinks = async () => {
+export const initRessourcesLinks = async (): Promise<string[]> => {
   const publicAccessPages = [
     // "https://www.scrapethissite.com/pages/",
     "https://bibliotheques.univ-pau.fr/fr/documentation/bases-de-donnees.html",
@@ -37,7 +37,7 @@ export const initRessourcesLinks = async () => {
   // console.log(ressourcesLink.length);
   const set = Array.from(new Set(ressourcesLink));
   // console.log(set.length);
-  return set;
+  return set as string[];
 };
 
 export const initTargets = (): string[] => {
