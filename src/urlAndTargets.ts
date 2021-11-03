@@ -28,6 +28,7 @@ export const initRessourcesLinks = async () => {
       // console.log(test);
       ressourcesLink.push(...rproxyLinks);
     }
+    await browser.close();
   } catch (error) {
     console.log(error);
   }
