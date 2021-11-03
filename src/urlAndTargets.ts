@@ -1,6 +1,6 @@
 import puppeteer from "puppeteer";
 
-const initRessourcesLinks = async () => {
+export const initRessourcesLinks = async () => {
   const publicAccessPages = [
     // "https://www.scrapethissite.com/pages/",
     "https://bibliotheques.univ-pau.fr/fr/documentation/bases-de-donnees.html",
@@ -39,7 +39,7 @@ const initRessourcesLinks = async () => {
   return set;
 };
 
-const initTargets = (): string[] => {
+export const initTargets = (): string[] => {
   return Array.from(
     new Set([
       "UNIV DE PAU",
@@ -76,5 +76,5 @@ const initTargets = (): string[] => {
   );
 };
 
-export default initRessourcesLinks;
+// export default initRessourcesLinks;
 // export default initTargets;
