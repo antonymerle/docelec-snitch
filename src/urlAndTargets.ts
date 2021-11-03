@@ -15,7 +15,7 @@ export const initRessourcesLinks = async () => {
     const page = await browser.newPage();
 
     for (let url of publicAccessPages) {
-      console.log(url);
+      // console.log(url);
       await page.goto(url);
       const rproxyLinks = await page.evaluate(() => {
         let links: (string | null)[] = Array.from(
@@ -36,7 +36,7 @@ export const initRessourcesLinks = async () => {
   // ressourcesLink.forEach((url) => console.log(url));
   // console.log(ressourcesLink.length);
   const set = Array.from(new Set(ressourcesLink));
-  console.log(set.length);
+  // console.log(set.length);
   return set;
 };
 
