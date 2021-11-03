@@ -1,5 +1,6 @@
 import puppeteer from "puppeteer";
 import dotenv from "dotenv";
+import initRessourcesLinks from "./urlAndTargets";
 
 dotenv.config({ path: "./config/.env" });
 
@@ -29,3 +30,4 @@ const login = async () => {
 };
 
 // login();
+initRessourcesLinks();

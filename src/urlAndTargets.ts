@@ -2,6 +2,7 @@ import puppeteer from "puppeteer";
 
 const initRessourcesLinks = async () => {
   const publicAccessPages = [
+    // "https://www.scrapethissite.com/pages/",
     "https://bibliotheques.univ-pau.fr/fr/documentation/bases-de-donnees.html",
     "https://bibliotheques.univ-pau.fr/fr/documentation/livres-electroniques.html",
     "https://bibliotheques.univ-pau.fr/fr/documentation/encyclopedies-et-dictionnaires.html",
@@ -13,20 +14,29 @@ const initRessourcesLinks = async () => {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
-    publicAccessPages.forEach(() => {
-      page.evaluate(() => {
-        let proxylinks: (string | null)[] = Array.from(
+    for (let url of publicAccessPages) {
+      console.log(url);
+      await page.goto(url);
+      const rproxyLinks = await page.evaluate(() => {
+        let links: (string | null)[] = Array.from(
           document.querySelectorAll("a")
         )
           .map((link) => link.getAttribute("href"))
-          .filter((link) => (link as string).includes("rproxy"));
-        ressourcesLink.push(...proxylinks);
+          .filter((link) => link?.includes("rproxy"));
+        return links;
       });
-    });
+      // console.log(test);
+      ressourcesLink.push(...rproxyLinks);
+    }
   } catch (error) {
     console.log(error);
   }
-  console.log(ressourcesLink);
+
+  // ressourcesLink.forEach((url) => console.log(url));
+  // console.log(ressourcesLink.length);
+  const set = Array.from(new Set(ressourcesLink));
+  console.log(set.length);
+  return set;
 };
 
 const initTargets = (): string[] => {
@@ -65,3 +75,6 @@ const initTargets = (): string[] => {
     ])
   );
 };
+
+export default initRessourcesLinks;
+// export default initTargets;
