@@ -6,11 +6,13 @@ import { initRessourcesLinks, initTargets } from "./urlAndTargets";
 dotenv.config({ path: "./config/.env" });
 
 const login = async () => {
+  console.log("Connexion en cours");
+
   const login = process.env.LOGIN;
   const mdp = process.env.PASSWORD;
 
   const URLs = await initRessourcesLinks();
-  console.log(URLs);
+  // console.log(URLs);
 
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
@@ -26,7 +28,15 @@ const login = async () => {
       page.waitForNavigation(),
     ]);
 
+    console.log("Connecté, démarrage de l'analyse");
+
+    let seconds = 0;
+
+    setInterval(() => seconds++, 1000);
+
     let count = 0;
+    let hits = 0;
+    let echecs: string[] = [];
     for (let url of URLs) {
       try {
         count++;
@@ -34,6 +44,7 @@ const login = async () => {
         const found = await page.evaluate(() => {
           // const targets = initTargets();
           const targets = [
+            "Reverse Proxy",
             "UNIV DE PAU",
             "UPPA - Univ Pau",
             "Univ de Pay et des Pays de l'Adour",
@@ -66,11 +77,24 @@ const login = async () => {
             "Universite de Pau et des Pays de l'Adour",
           ];
 
-          for (let target of targets) {
-            if ((window as any).find(target)) return true;
+          let links: (string | null)[] = Array.from(
+            document.querySelectorAll("a")
+          )
+            .map((link) => link.getAttribute("href"))
+            .filter((link) => link?.includes("rproxy"));
+          // return links.length > 0 ? true : false;
+          if (links.length > 0) {
+            return { up: true, url: null };
+          } else {
+            for (let target of targets) {
+              if ((window as any).find(target)) {
+                return { up: true, url: null };
+              }
+            }
+            return { up: false, url: null };
           }
-          return false;
         });
+        found.up ? hits++ : echecs.push(url);
         console.log(count + " " + found + " " + url);
       } catch (error) {
         console.log(error);
@@ -78,7 +102,15 @@ const login = async () => {
     }
 
     await browser.close();
-    console.log("finished");
+
+    console.log(`Analyse menée en ${seconds} secondes`);
+    console.log("hits : " + hits);
+    console.log(
+      "Ressources pour lesquelles la vérification a échoué : (à vérifier manuellement)"
+    );
+    echecs.forEach((echec) => console.log(echec));
+
+    clearInterval();
   } catch (error) {
     console.log(error);
   }
