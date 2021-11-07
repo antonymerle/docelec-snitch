@@ -1,11 +1,46 @@
+import express from "express";
+
 import puppeteer from "puppeteer";
 import dotenv from "dotenv";
+import { login } from "./index";
 import { initRessourcesLinks, initTargets } from "./urlAndTargets";
-// import {  } from "./urlAndTargets";
 
 dotenv.config({ path: "./config/.env" });
 
-export const login = async () => {
+interface SnitchLog {
+  generalInfo: string[];
+  test: string[];
+  success: string[];
+  failure: string[];
+  report: string[];
+}
+
+const app = express();
+
+// ----------------- Middlewares ---------------------
+app.use(express.json());
+
+app.get("/test", (req, res) => {
+  res.send(["poires", "pommes", "fraises"]);
+});
+
+app.get("/", (req, res) => {
+  res.send("Hello Snitch !");
+});
+
+app.get("/snitch", async (req, res) => {
+  const data: string[] = [];
+
+  const logs: SnitchLog = {
+    generalInfo: [],
+    test: [],
+    success: [],
+    failure: [],
+    report: [],
+  };
+
+  // =====SNITCH()=======
+
   console.log("Connexion en cours");
 
   const login = process.env.LOGIN;
@@ -33,6 +68,7 @@ export const login = async () => {
     ]);
 
     console.log("Connecté, démarrage de l'analyse");
+    logs.generalInfo.push("Connecté, démarrage de l'analyse");
 
     let seconds = 0;
 
@@ -50,31 +86,43 @@ export const login = async () => {
         const contentPageStr = await page.content();
         const found = contentPageStr.includes("rproxy");
 
-        console.log(`${count}    ${found ? "vérifié" : "échec"}    ${url}`);
+        const logLine = `${count}    ${found ? "vérifié" : "échec"}    ${url}`;
+        console.log(logLine);
+        logs.test.push(logLine);
+        // res.send(logLine);
 
         if (found) {
           hits++;
           reussites.push(url);
+          logs.success.push(url);
         } else {
           let reussiteRechercheApprofondie = false;
           console.log("Recherche approfondie en cours...");
+          logs.test.push("Recherche approfondie en cours...");
 
           for (let target of targets) {
             if (contentPageStr.includes(target)) {
               hits++;
               reussites.push(url);
+              logs.success.push(url);
               console.log("La recherche approfondie a réussi.");
+              logs.test.push("La recherche approfondie a réussi.");
+
               reussiteRechercheApprofondie = true;
               break;
             }
           }
           if (!reussiteRechercheApprofondie) {
             console.log("La recherche approfondie a échoué.");
+            logs.test.push("La recherche approfondie a échoué.");
+
             echecs.push(url);
+            logs.failure.push(url);
           }
         }
       } catch (error) {
         echecs.push(url);
+        logs.failure.push(url);
         console.log(error);
       }
     }
@@ -84,12 +132,21 @@ export const login = async () => {
     console.log();
 
     console.log(`Analyse terminée en ${seconds} secondes`);
+    data.push(`Analyse terminée en ${seconds} secondes`);
+    logs.report.push(`Analyse terminée en ${seconds} secondes`);
+    // res.send(`Analyse terminée en ${seconds} secondes`);
+
     console.log(
       `${hits} ressources vérifiées avec succès sur un total de ${URLs.length}`
     );
+    logs.report.push(
+      `${hits} ressources vérifiées avec succès sur un total de ${URLs.length}`
+    );
+
     console.log();
 
     console.log("Ressources vérifiées :");
+
     reussites.forEach((reussite) => console.log(reussite));
     console.log();
 
@@ -100,10 +157,12 @@ export const login = async () => {
   } catch (error) {
     console.log(error);
   }
-};
 
-login();
-// initRessourcesLinks();
-// console.log(await initRessourcesLinks());
+  // =================
 
-// initTargets().forEach((url) => console.log(url));
+  res.send(logs);
+});
+
+const port = process.env.PORT || 5000;
+
+app.listen(port);
