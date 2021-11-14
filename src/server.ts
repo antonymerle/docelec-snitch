@@ -70,12 +70,11 @@ app.get("/initTables", (req, res) => {
 
 // ---------------- Queries ----------------
 
-const DBinsertReport = (): number => {
-  const rowId = db.query("INSERT INTO reports VALUES()", (err, result) => {
+const DBinsertReport = (): number | void => {
+  db.query("INSERT INTO reports VALUES()", (err, result) => {
     if (err) throw err;
-    return result.insertId as number;
+    // console.log(result);
   });
-  return rowId as any;
 };
 
 const DBinsertURL = (url: string, success: number, reportId: number) => {
@@ -86,6 +85,14 @@ const DBinsertURL = (url: string, success: number, reportId: number) => {
       console.log(result);
     }
   );
+};
+
+const DBGetMaxReportId = () => {
+  db.query("SELECT MAX(id) FROM reports", (err, result) => {
+    if (err) throw err;
+
+    return result;
+  });
 };
 
 // ---------------- Middlewares ----------------
@@ -140,6 +147,13 @@ app.get("/snitch", async (req, res) => {
 
     console.log("Connecté, démarrage de l'analyse");
     logs.generalInfo.push("Connecté, démarrage de l'analyse");
+
+    // marche pas car async
+
+    // DBinsertReport();
+    // console.log("outside fn");
+    // const IDReport = DBGetMaxReportId();
+    // console.log(IDReport);
 
     let seconds = 0;
 
