@@ -1,4 +1,5 @@
 import express from "express";
+import mysql from "mysql";
 
 import puppeteer from "puppeteer";
 import dotenv from "dotenv";
@@ -17,7 +18,77 @@ interface SnitchLog {
 
 const app = express();
 
-// ----------------- Middlewares ---------------------
+// Create MySQL DB connection
+const db = mysql.createConnection({
+  host: "localhost",
+  user: process.env.MYSQLUSER,
+  password: process.env.MYSQLPASSWORD,
+  database: "snitch",
+});
+
+db.connect((err) => {
+  if (err) {
+    throw err;
+  }
+  console.log("MySql connected...");
+});
+
+// ---------------- Create DB ----------------
+
+app.get("/createdb", (req, res) => {
+  const sqlr = "CREATE DATABASE snitch";
+  db.query(sqlr, (err, result) => {
+    if (err) res.send(err);
+    console.log(result);
+
+    res.send("Base de donnée créée ");
+  });
+});
+
+// ---------------- Create tables ----------------
+app.get("/initTables", (req, res) => {
+  const erreurs: mysql.MysqlError[] = [];
+  const sqlrReports =
+    "CREATE TABLE reports(id INT AUTO_INCREMENT, report_date DATETIME DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(id))";
+  db.query(sqlrReports, (err, result) => {
+    if (err) erreurs.push(err);
+    console.log(result);
+  });
+
+  const sqlrURLS =
+    "CREATE TABLE urls(id INT AUTO_INCREMENT, url VARCHAR(255), success TINYINT, report_id INT, PRIMARY KEY(id), FOREIGN KEY(report_id) REFERENCES reports(id))";
+  db.query(sqlrURLS, (err, result) => {
+    if (err) erreurs.push(err);
+    console.log(result);
+  });
+
+  erreurs.length > 0
+    ? res.send(erreurs)
+    : res.send('Tables "urls" et "reports" créées');
+  console.log(erreurs);
+});
+
+// ---------------- Queries ----------------
+
+const DBinsertReport = (): number => {
+  const rowId = db.query("INSERT INTO reports VALUES()", (err, result) => {
+    if (err) throw err;
+    return result.insertId as number;
+  });
+  return rowId as any;
+};
+
+const DBinsertURL = (url: string, success: number, reportId: number) => {
+  db.query(
+    `INSERT INTO urls(url, success, report_id) VALUES(${url}, ${success}, ${reportId}`,
+    (err, result) => {
+      if (err) throw err;
+      console.log(result);
+    }
+  );
+};
+
+// ---------------- Middlewares ----------------
 app.use(express.json());
 
 app.get("/test", (req, res) => {
@@ -165,4 +236,6 @@ app.get("/snitch", async (req, res) => {
 
 const port = process.env.PORT || 5000;
 
-app.listen(port);
+app.listen(port, () => {
+  console.log(`Serveur démarré sur le port ${port}`);
+});
