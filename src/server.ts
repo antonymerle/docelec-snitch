@@ -1,4 +1,4 @@
-import express from "express";
+import express, { response } from "express";
 import mysql from "mysql";
 
 import puppeteer from "puppeteer";
@@ -87,12 +87,37 @@ const DBinsertURL = (url: string, success: number, reportId: number) => {
   );
 };
 
-const DBGetMaxReportId = () => {
-  db.query("SELECT MAX(id) FROM reports", (err, result) => {
-    if (err) throw err;
+// const DBGetMaxReportId = () => {
+//   db.query("SELECT MAX(id) FROM reports", (err, result) => {
+//     if (err) throw err;
 
-    return result;
-  });
+//     return result;
+//   });
+// };
+
+const getLastReportId = async () => {
+  interface sqlResponse {
+    "MAX(id)": number;
+  }
+  try {
+    // make sure that any items are correctly URL encoded in the connection string
+    // await db.connect("SELECT MAX(id) FROM reports")
+    // mysql.queryCallback
+    const response: sqlResponse[] = await new Promise((resolve, reject) => {
+      db.query("SELECT MAX(id) FROM reports", (err, result) => {
+        if (err) reject(new Error(err.message));
+        resolve(result);
+      });
+    });
+    console.dir(typeof response);
+    console.dir(response);
+    console.log(`La réponse est ${response[0]["MAX(id)"]}`);
+
+    return response;
+  } catch (err) {
+    // ... error checks
+    console.log(err);
+  }
 };
 
 // ---------------- Middlewares ----------------
@@ -149,6 +174,16 @@ app.get("/snitch", async (req, res) => {
     logs.generalInfo.push("Connecté, démarrage de l'analyse");
 
     // marche pas car async
+
+    let test = await getLastReportId();
+    console.log(test);
+
+    // db.query("SELECT MAX(id) FROM reports", (err, result) => {
+    //   if (err) throw err;
+    //   test = result;
+    //   return result;
+    // });
+    // console.log(test);
 
     // DBinsertReport();
     // console.log("outside fn");
