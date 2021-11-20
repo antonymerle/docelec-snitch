@@ -70,21 +70,37 @@ app.get("/initTables", (req, res) => {
 
 // ---------------- Queries ----------------
 
-const DBinsertReport = (): number | void => {
-  db.query("INSERT INTO reports VALUES()", (err, result) => {
-    if (err) throw err;
-    // console.log(result);
-  });
+const DBinsertReport = async () => {
+  try {
+    const response: number = await new Promise((resolve, reject) => {
+      db.query("INSERT INTO reports VALUES()", (err, result) => {
+        if (err) reject(new Error(err.message));
+        resolve(result.insertId);
+      });
+    });
+    console.log(`Row inserted : ${response}`);
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
 };
 
-const DBinsertURL = (url: string, success: number, reportId: number) => {
-  db.query(
-    `INSERT INTO urls(url, success, report_id) VALUES(${url}, ${success}, ${reportId}`,
-    (err, result) => {
-      if (err) throw err;
-      console.log(result);
-    }
-  );
+const DBinsertURL = async (url: string, success: number, reportId: number) => {
+  try {
+    const response = await new Promise((resolve, reject) => {
+      db.query(
+        `INSERT INTO urls(url, success, report_id) VALUES(${url}, ${success}, ${reportId}`,
+        (err, result) => {
+          if (err) reject(new Error(err.message));
+          resolve(result);
+        }
+      );
+    });
+    console.log(response);
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 // const DBGetMaxReportId = () => {
@@ -109,8 +125,8 @@ const getLastReportId = async () => {
         resolve(result);
       });
     });
-    console.dir(typeof response);
-    console.dir(response);
+    console.log(typeof response);
+    console.log(response);
     console.log(`La réponse est ${response[0]["MAX(id)"]}`);
 
     return response;
@@ -175,20 +191,8 @@ app.get("/snitch", async (req, res) => {
 
     // marche pas car async
 
-    let test = await getLastReportId();
-    console.log(test);
-
-    // db.query("SELECT MAX(id) FROM reports", (err, result) => {
-    //   if (err) throw err;
-    //   test = result;
-    //   return result;
-    // });
-    // console.log(test);
-
-    // DBinsertReport();
-    // console.log("outside fn");
-    // const IDReport = DBGetMaxReportId();
-    // console.log(IDReport);
+    let lastReportInserted = await DBinsertReport();
+    console.log(lastReportInserted);
 
     let seconds = 0;
 
