@@ -82,19 +82,18 @@ const DBinsertReport = async () => {
     return response;
   } catch (error) {
     console.log(error);
+    return null;
   }
 };
 
 const DBinsertURL = async (url: string, success: number, reportId: number) => {
   try {
     const response = await new Promise((resolve, reject) => {
-      db.query(
-        `INSERT INTO urls(url, success, report_id) VALUES(${url}, ${success}, ${reportId}`,
-        (err, result) => {
-          if (err) reject(new Error(err.message));
-          resolve(result);
-        }
-      );
+      const query = "INSERT INTO urls(url, success, report_id) VALUES(?,?,?)";
+      db.query(query, [url, success, reportId], (err, result) => {
+        if (err) reject(new Error(err.message));
+        resolve(result);
+      });
     });
     console.log(response);
     return response;
@@ -191,8 +190,9 @@ app.get("/snitch", async (req, res) => {
 
     // marche pas car async
 
-    let lastReportInserted = await DBinsertReport();
-    console.log(lastReportInserted);
+    let reportID = await DBinsertReport();
+    if (reportID === null) throw new Error("DBinsertReport() a échoué");
+    console.log(reportID);
 
     let seconds = 0;
 
@@ -219,6 +219,7 @@ app.get("/snitch", async (req, res) => {
           hits++;
           reussites.push(url);
           logs.success.push(url);
+          await DBinsertURL(url, 1, reportID);
         } else {
           let reussiteRechercheApprofondie = false;
           console.log("Recherche approfondie en cours...");
@@ -231,6 +232,7 @@ app.get("/snitch", async (req, res) => {
               logs.success.push(url);
               console.log("La recherche approfondie a réussi.");
               logs.test.push("La recherche approfondie a réussi.");
+              await DBinsertURL(url, 1, reportID);
 
               reussiteRechercheApprofondie = true;
               break;
@@ -239,6 +241,7 @@ app.get("/snitch", async (req, res) => {
           if (!reussiteRechercheApprofondie) {
             console.log("La recherche approfondie a échoué.");
             logs.test.push("La recherche approfondie a échoué.");
+            await DBinsertURL(url, 0, reportID);
 
             echecs.push(url);
             logs.failure.push(url);
@@ -246,6 +249,7 @@ app.get("/snitch", async (req, res) => {
         }
       } catch (error) {
         echecs.push(url);
+        await DBinsertURL(url, 0, reportID);
         logs.failure.push(url);
         console.log(error);
       }
@@ -283,7 +287,7 @@ app.get("/snitch", async (req, res) => {
   }
 
   // =================
-
+  db.end();
   res.send(logs);
 });
 
