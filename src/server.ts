@@ -213,6 +213,35 @@ app.get("/", (req, res) => {
   res.send("Hello Snitch !");
 });
 
+app.get("/report/:report_id", async (req, res) => {
+  const id: number = Number(req.params.report_id);
+  if (id === NaN) res.send(null);
+  const reportInfo = await DBgetReportInfo(id);
+  const urlsTestees = await DBfetchAllURLs(id);
+
+  if (reportInfo && urlsTestees) {
+    const snitchLog: SnitchLog = {
+      startDate: new Date(reportInfo.report_date_start),
+      endDate: new Date(reportInfo.report_date_end),
+      durationInSeconds:
+        (new Date(reportInfo.report_date_end).getTime() -
+          new Date(reportInfo.report_date_start).getTime()) /
+        1000,
+
+      failure: urlsTestees
+        .filter((url) => url.success === 0)
+        .map((url) => url.url),
+      success: urlsTestees
+        .filter((url) => url.success === 1)
+        .map((url) => url.url),
+      report: urlsTestees.map((url) => url.url),
+    };
+    res.send(snitchLog);
+  }
+
+  // report.startDate = response?.map
+});
+
 app.get("/snitch", async (req, res) => {
   const data: string[] = [];
 
@@ -393,6 +422,8 @@ app.get("/snitch", async (req, res) => {
       logs.failure = urls
         .filter((url) => url.success === 0)
         .map((url) => url.url);
+
+      logs.report = urls.map((url) => url.url);
     }
 
     console.log(
