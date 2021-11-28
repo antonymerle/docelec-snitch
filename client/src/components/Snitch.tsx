@@ -8,13 +8,20 @@ import { useState, useEffect } from "react";
 //   report: string[];
 // }
 
+interface URLTableSchema {
+  id: number;
+  url: string;
+  success: number;
+  report_id: number;
+}
+
 interface SnitchLog {
   startDate: null | Date;
   endDate: null | Date;
   durationInSeconds: number;
   success: string[];
   failure: string[];
-  report: string[];
+  report: URLTableSchema[];
 }
 
 const Snitch = () => {
@@ -27,7 +34,7 @@ const Snitch = () => {
     report: [],
   });
   useEffect(() => {
-    fetch("/snitch")
+    fetch("/report/34")
       .then((res) => res.json())
       .then((data) => setLog(data));
   }, []);
@@ -47,16 +54,8 @@ const Snitch = () => {
         {log.failure.length} échecs.
       </p>
 
-      <h3>Rapport</h3>
-      {log.report.map((line) => (
-        <p key={line}>{line}</p>
-      ))}
+      <h3>{log.failure.length} échecs (à vérifier manuellement)</h3>
 
-      <h3>Echecs : {log.failure.length}</h3>
-      <h4>
-        Ressources pour lesquelles la vérification a échoué : (à vérifier
-        manuellement)
-      </h4>
       {log.failure.map((line) => (
         <p key={line}>{line}</p>
       ))}
@@ -66,9 +65,19 @@ const Snitch = () => {
         <p key={line}>{line}</p>
       ))}
 
+      {/* <h3>Rapport</h3>
+      {log.report.map((line) => (
+        <p key={line.id}>{line.url}</p>
+      ))} */}
+
       <h3>Ressources testées : </h3>
       {log.report.map((line) => (
-        <p key={line}>{line}</p>
+        <p
+          key={line.id}
+          style={line.success === 1 ? { color: "green" } : { color: "red" }}
+        >
+          {line.url} : {line.success === 1 ? "Succès" : "Echec"}
+        </p>
       ))}
     </div>
   );
