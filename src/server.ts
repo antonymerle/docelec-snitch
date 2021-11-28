@@ -3,7 +3,7 @@ import mysql from "mysql";
 
 import puppeteer from "puppeteer";
 import dotenv from "dotenv";
-import { login } from "./index";
+// import { login } from "./index";
 import { initRessourcesLinks, initTargets } from "./urlAndTargets";
 
 dotenv.config({ path: "./config/.env" });
@@ -232,8 +232,15 @@ app.get("/snitch", async (req, res) => {
   const login = process.env.LOGIN;
   const mdp = process.env.PASSWORD;
 
-  const URLs = await initRessourcesLinks();
+  // const URLs = await initRessourcesLinks();
   const targets = initTargets();
+  const URLs = [
+    "https://parlipapers-proquest-com.rproxy.univ-pau.fr/parlipapers",
+    "http://pubs.acs.org.rproxy.univ-pau.fr/action/showPublications?display=journals",
+    "https://www-alternatives-economiques-fr.rproxy.univ-pau.fr/",
+    "http://www.brepolis.net.rproxy.univ-pau.fr",
+    "https://www.bnds.fr.rproxy.univ-pau.fr",
+  ];
   // const URLs = [
   //   "https://www-scopus-com.rproxy.univ-pau.fr/search/form.uri?display=basic#basic",
   // ];
