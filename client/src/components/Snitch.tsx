@@ -1,8 +1,17 @@
 import { useState, useEffect } from "react";
 
+// interface SnitchLog {
+//   generalInfo: string[];
+//   test: string[];
+//   success: string[];
+//   failure: string[];
+//   report: string[];
+// }
+
 interface SnitchLog {
-  generalInfo: string[];
-  test: string[];
+  startDate: null | Date;
+  endDate: null | Date;
+  durationInSeconds: number;
   success: string[];
   failure: string[];
   report: string[];
@@ -10,8 +19,9 @@ interface SnitchLog {
 
 const Snitch = () => {
   const [log, setLog] = useState<SnitchLog>({
-    generalInfo: ["Démarrage du scan..."],
-    test: [],
+    startDate: null,
+    endDate: null,
+    durationInSeconds: -1,
     success: [],
     failure: [],
     report: [],
@@ -23,17 +33,26 @@ const Snitch = () => {
   }, []);
   return (
     <div>
-      <h3>General Info</h3>
-      {log.generalInfo.map((line) => (
-        <p key={line}>{line}</p>
-      ))}
+      <h3>Informations générales</h3>
+      {log.startDate ? (
+        <p>
+          Analyse commencée le {new Date(log.startDate).toLocaleDateString()}à{" "}
+          {new Date(log.startDate).toLocaleTimeString()}
+        </p>
+      ) : null}
+
+      <p>Analyse réalisée en {log.durationInSeconds} secondes.</p>
+      <p>
+        {log.report.length} ressources scannées. {log.success.length} sont OK -{" "}
+        {log.failure.length} échecs.
+      </p>
 
       <h3>Rapport</h3>
       {log.report.map((line) => (
         <p key={line}>{line}</p>
       ))}
 
-      <h3>Failures : {log.failure.length}</h3>
+      <h3>Echecs : {log.failure.length}</h3>
       <h4>
         Ressources pour lesquelles la vérification a échoué : (à vérifier
         manuellement)
@@ -42,13 +61,13 @@ const Snitch = () => {
         <p key={line}>{line}</p>
       ))}
 
-      <h3>Success : {log.success.length}</h3>
+      <h3>Ressources vérifiées avec succès : {log.success.length}</h3>
       {log.success.map((line) => (
         <p key={line}>{line}</p>
       ))}
 
       <h3>Ressources testées : </h3>
-      {log.test.map((line) => (
+      {log.report.map((line) => (
         <p key={line}>{line}</p>
       ))}
     </div>
