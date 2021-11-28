@@ -14,7 +14,7 @@ interface SnitchLog {
   durationInSeconds: number;
   success: string[];
   failure: string[];
-  report: string[];
+  report: URLTableSchema[];
 }
 
 const app = express();
@@ -234,7 +234,7 @@ app.get("/report/:report_id", async (req, res) => {
       success: urlsTestees
         .filter((url) => url.success === 1)
         .map((url) => url.url),
-      report: urlsTestees.map((url) => url.url),
+      report: urlsTestees.map((url) => url),
     };
     res.send(snitchLog);
   }
@@ -261,15 +261,15 @@ app.get("/snitch", async (req, res) => {
   const login = process.env.LOGIN;
   const mdp = process.env.PASSWORD;
 
-  // const URLs = await initRessourcesLinks();
+  const URLs = await initRessourcesLinks();
   const targets = initTargets();
-  const URLs = [
-    "https://parlipapers-proquest-com.rproxy.univ-pau.fr/parlipapers",
-    "http://pubs.acs.org.rproxy.univ-pau.fr/action/showPublications?display=journals",
-    "https://www-alternatives-economiques-fr.rproxy.univ-pau.fr/",
-    "http://www.brepolis.net.rproxy.univ-pau.fr",
-    "https://www.bnds.fr.rproxy.univ-pau.fr",
-  ];
+  // const URLs = [
+  //   "https://parlipapers-proquest-com.rproxy.univ-pau.fr/parlipapers",
+  //   "http://pubs.acs.org.rproxy.univ-pau.fr/action/showPublications?display=journals",
+  //   "https://www-alternatives-economiques-fr.rproxy.univ-pau.fr/",
+  //   "http://www.brepolis.net.rproxy.univ-pau.fr",
+  //   "https://www.bnds.fr.rproxy.univ-pau.fr",
+  // ];
   // const URLs = [
   //   "https://www-scopus-com.rproxy.univ-pau.fr/search/form.uri?display=basic#basic",
   // ];
@@ -423,7 +423,8 @@ app.get("/snitch", async (req, res) => {
         .filter((url) => url.success === 0)
         .map((url) => url.url);
 
-      logs.report = urls.map((url) => url.url);
+      // logs.report = urls.map((url) => url);
+      logs.report = urls;
     }
 
     console.log(
