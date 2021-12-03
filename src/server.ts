@@ -202,6 +202,26 @@ const getLastReportId = async () => {
   }
 };
 
+const DBGetReportList = async () => {
+  interface ReportList {
+    id: number;
+  }
+  try {
+    const response: ReportList[] | null = await new Promise(
+      (resolve, reject) => {
+        db.query("SELECT id FROM reports ORDER BY id DESC", (err, result) => {
+          if (err) reject(new Error(err.message));
+          resolve(result);
+        });
+      }
+    );
+    console.log(response);
+    return response ? response.map((obj) => obj.id) : null;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
 // ---------------- Middlewares ----------------
 app.use(express.json());
 
@@ -211,6 +231,11 @@ app.get("/test", (req, res) => {
 
 app.get("/", (req, res) => {
   res.send("Hello Snitch !");
+});
+
+app.get("/report/list", async (req, res) => {
+  const response = await DBGetReportList();
+  res.send(response);
 });
 
 app.get("/report/:report_id", async (req, res) => {
