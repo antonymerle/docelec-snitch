@@ -24,54 +24,52 @@ interface SnitchLog {
   report: URLTableSchema[];
 }
 
-const Snitch = () => {
-  const [log, setLog] = useState<SnitchLog>({
-    startDate: null,
-    endDate: null,
-    durationInSeconds: -1,
-    success: [],
-    failure: [],
-    report: [],
-  });
-  useEffect(() => {
-    fetch("/report/34")
-      .then((res) => res.json())
-      .then((data) => setLog(data));
-  }, []);
+interface Props {
+  report: SnitchLog;
+}
+
+const Snitch: React.FC<Props> = ({ report }) => {
+  // useEffect(() => {
+  //   // fetch("/report/34")
+  //   // fetch("/report/dernier")
+  //   fetch("/snitch")
+  //     .then((res) => res.json())
+  //     .then((data) => setLog(data));
+  // }, []);
   return (
     <div>
       <h3>Informations générales</h3>
-      {log.startDate ? (
+      {report.startDate ? (
         <p>
-          Analyse commencée le {new Date(log.startDate).toLocaleDateString()}à{" "}
-          {new Date(log.startDate).toLocaleTimeString()}
+          Analyse commencée le {new Date(report.startDate).toLocaleDateString()}
+          à {new Date(report.startDate).toLocaleTimeString()}
         </p>
       ) : null}
 
-      <p>Analyse réalisée en {log.durationInSeconds} secondes.</p>
+      <p>Analyse réalisée en {report.durationInSeconds} secondes.</p>
       <p>
-        {log.report.length} ressources scannées. {log.success.length} sont OK -{" "}
-        {log.failure.length} échecs.
+        {report.report.length} ressources scannées. {report.success.length} sont
+        OK - {report.failure.length} échecs.
       </p>
 
-      <h3>{log.failure.length} échecs (à vérifier manuellement)</h3>
+      <h3>{report.failure.length} échecs (à vérifier manuellement)</h3>
 
-      {log.failure.map((line) => (
+      {report.failure.map((line) => (
         <p key={line}>{line}</p>
       ))}
 
-      <h3>Ressources vérifiées avec succès : {log.success.length}</h3>
-      {log.success.map((line) => (
+      <h3>Ressources vérifiées avec succès : {report.success.length}</h3>
+      {report.success.map((line) => (
         <p key={line}>{line}</p>
       ))}
 
       {/* <h3>Rapport</h3>
-      {log.report.map((line) => (
+      {report.report.map((line) => (
         <p key={line.id}>{line.url}</p>
       ))} */}
 
       <h3>Ressources testées : </h3>
-      {log.report.map((line) => (
+      {report.report.map((line) => (
         <p
           key={line.id}
           style={line.success === 1 ? { color: "green" } : { color: "red" }}
