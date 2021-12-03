@@ -21,8 +21,15 @@ interface SnitchLog {
 
 const Dashboard = () => {
   const [fetchDataStatus, setfetchDataStatus] = useState("idle");
-  const [canFetch, setCanFetch] = useState(fetchDataStatus === "idle");
-  const [listeRapports, setListeRapports] = useState<string[]>(["Choisir"]);
+
+  const [listeRapports, setListeRapports] = useState<string[]>([
+    "Choisir un rapport",
+  ]);
+  const [reportToFetch, setReportToFetch] =
+    useState<string>("Choisir un rapport");
+  const [canFetch, setCanFetch] = useState(
+    fetchDataStatus === "idle" && reportToFetch !== "Choisir un rapport"
+  );
 
   const [report, setReport] = useState<SnitchLog>({
     startDate: null,
@@ -32,29 +39,35 @@ const Dashboard = () => {
     failure: [],
     report: [],
   });
-
   useEffect(() => {
     fetch("/report/list")
       .then((res) => res.json())
-      .then((data) => setListeRapports(data));
+      .then((data) => setListeRapports([listeRapports, ...data]));
   }, []);
 
   const fetchReport = async (route: string): Promise<SnitchLog> => {
     const response = await fetch(route);
     const data = await response.json();
+    console.log(data);
+
     return data;
   };
 
   const onFetch = async () => {
+    fetchDataStatus === "idle" && reportToFetch !== "Choisir un rapport"
+      ? setCanFetch(true)
+      : setCanFetch(false);
+
     if (canFetch) {
       try {
         setfetchDataStatus("pending");
-        const response = await fetchReport("/report/34");
+        const response = await fetchReport(`/report/${reportToFetch}`);
         setReport(response);
       } catch (error) {
         console.log("echec de la récupération des données : " + error);
       } finally {
         setfetchDataStatus("idle");
+        setCanFetch(false);
       }
     }
   };
@@ -63,7 +76,13 @@ const Dashboard = () => {
     <div>
       <Form className="form-item">
         <Form.Group>
-          <Form.Control as="select" onChange={(e) => e.target.value}>
+          <Form.Control
+            as="select"
+            onChange={(e) => {
+              setReportToFetch(e.target.value);
+              setCanFetch(true);
+            }}
+          >
             {listeRapports.map((rapport) => (
               <option value={rapport} key={rapport}>
                 {rapport}
@@ -73,7 +92,9 @@ const Dashboard = () => {
         </Form.Group>
       </Form>
 
-      <Button variant="dark">Lancer l'analyse</Button>
+      <Button variant="dark" onClick={onFetch}>
+        Afficher l'analyse
+      </Button>
       <Snitch report={report} />
     </div>
   );
