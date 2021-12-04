@@ -2,6 +2,7 @@ import express from "express";
 import mysql from "mysql";
 import puppeteer from "puppeteer";
 import dotenv from "dotenv";
+import cron from "node-cron";
 import { initRessourcesLinks, initTargets } from "./urlAndTargets";
 
 dotenv.config({ path: "./config/.env" });
@@ -425,6 +426,18 @@ app.get("/snitch", async (req, res) => {
   const logs = await writeReport();
   res.send(logs);
 });
+
+cron.schedule(
+  "0 6,13 * * *",
+  () => {
+    console.log("Lancement job à 06:00 et 13:00 Paris UTC+1");
+    writeReport();
+  },
+  {
+    scheduled: true,
+    timezone: "Europe/Paris",
+  }
+);
 
 const port = process.env.PORT || 5000;
 
