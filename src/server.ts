@@ -1,9 +1,8 @@
-import express, { response } from "express";
+import express from "express";
 import mysql from "mysql";
 
 import puppeteer from "puppeteer";
 import dotenv from "dotenv";
-// import { login } from "./index";
 import { initRessourcesLinks, initTargets } from "./urlAndTargets";
 
 dotenv.config({ path: "./config/.env" });
@@ -128,7 +127,7 @@ const DBfetchAllURLs = async (
         resolve(result);
       });
     });
-    // console.log(response);
+
     return response;
   } catch (error) {
     console.log(error);
@@ -166,10 +165,7 @@ const DBgetReportInfo = async (
       }
     );
     console.log(response);
-    // const report_date_start = new Date(response[0]["report_date_start"]);
-    // const report_date_end = new Date(response[0]["report_date_end"]);
 
-    // return (report_date_end.getTime() - report_date_start.getTime()) / 1000;
     return response[0];
   } catch (error) {
     console.log(error);
@@ -182,9 +178,6 @@ const getLastReportId = async () => {
     "MAX(id)": number;
   }
   try {
-    // make sure that any items are correctly URL encoded in the connection string
-    // await db.connect("SELECT MAX(id) FROM reports")
-    // mysql.queryCallback
     const response: sqlResponse[] = await new Promise((resolve, reject) => {
       db.query("SELECT MAX(id) FROM reports", (err, result) => {
         if (err) reject(new Error(err.message));
@@ -197,7 +190,6 @@ const getLastReportId = async () => {
 
     return response;
   } catch (err) {
-    // ... error checks
     console.log(err);
   }
 };
@@ -219,7 +211,7 @@ const DBGetReportList = async () => {
       }
     );
     console.log(response);
-    // return response ? response.map((obj) => obj.report_date_start) : null;
+
     return response;
   } catch (error) {
     console.log(error);
@@ -267,8 +259,6 @@ app.get("/report/:report_id", async (req, res) => {
     };
     res.send(snitchLog);
   }
-
-  // report.startDate = response?.map
 });
 
 app.get("/snitch", async (req, res) => {
@@ -284,7 +274,6 @@ app.get("/snitch", async (req, res) => {
   };
 
   // =====SNITCH()=======
-
   console.log("Connexion en cours");
 
   const login = process.env.LOGIN;
@@ -302,7 +291,6 @@ app.get("/snitch", async (req, res) => {
   // const URLs = [
   //   "https://www-scopus-com.rproxy.univ-pau.fr/search/form.uri?display=basic#basic",
   // ];
-  // console.log(URLs);
 
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
@@ -319,47 +307,16 @@ app.get("/snitch", async (req, res) => {
     ]);
 
     console.log("Connecté, démarrage de l'analyse");
-    // logs.generalInfo.push("Connecté, démarrage de l'analyse");
 
     let reportID = await DBinsertReport();
     if (reportID === null) throw new Error("DBinsertReport() a échoué");
     console.log(reportID);
-
-    // const reportInfo = await DBgetReportInfo(reportID);
-
-    // const urls = await DBfetchAllURLs(18);
-
-    // if (urls) {
-    //   logs.success = urls
-    //     .filter((url) => url.success === 1)
-    //     .map((url) => url.url);
-
-    //   logs.failure = urls
-    //     .filter((url) => url.success === 0)
-    //     .map((url) => url.url);
-    // }
-
-    // console.log(
-    //   "***************************** SUCCESSES *****************************"
-    // );
-
-    // console.log(logs.success);
-    // console.log(logs.success.length);
-
-    // console.log(
-    //   "***************************** FAILURES *****************************"
-    // );
-    // console.log(logs.failure);
-    // console.log(logs.failure.length);
 
     let seconds = 0;
 
     setInterval(() => seconds++, 1000);
 
     let count = 0;
-    let hits = 0;
-    let echecs: string[] = [];
-    let reussites: string[] = [];
 
     for (let url of URLs) {
       try {
@@ -370,56 +327,33 @@ app.get("/snitch", async (req, res) => {
 
         const logLine = `${count}    ${found ? "vérifié" : "échec"}    ${url}`;
         console.log(logLine);
-        // logs.test.push(logLine);
-        // res.send(logLine);
 
         if (found) {
-          hits++;
-          // reussites.push(url);
-          // logs.success.push(url);
           await DBinsertURL(url, 1, reportID);
         } else {
           let reussiteRechercheApprofondie = false;
           console.log("Recherche approfondie en cours...");
-          // logs.test.push("Recherche approfondie en cours...");
 
           for (let target of targets) {
             if (contentPageStr.includes(target)) {
-              hits++;
-              // reussites.push(url);
-              // logs.success.push(url);
               console.log("La recherche approfondie a réussi.");
-              // logs.test.push("La recherche approfondie a réussi.");
               await DBinsertURL(url, 1, reportID);
-
               reussiteRechercheApprofondie = true;
               break;
             }
           }
           if (!reussiteRechercheApprofondie) {
             console.log("La recherche approfondie a échoué.");
-            // logs.test.push("La recherche approfondie a échoué.");
             await DBinsertURL(url, 0, reportID);
-
-            // echecs.push(url);
-            // logs.failure.push(url);
           }
         }
       } catch (error) {
-        // echecs.push(url);
         await DBinsertURL(url, 0, reportID);
-        // logs.failure.push(url);
         console.log(error);
       }
     }
 
     await browser.close();
-
-    // DB final requests
-    // await DBReportUpdateDateEnd(reportID);
-    // logs.durationInSeconds = await DBgetReportTimeDurationInSeconds(reportID);
-    // console.log(`Analyse terminée en ${logs.durationInSeconds} secondes`);
-
     await DBReportUpdateDateEnd(reportID);
     const reportInfo = await DBgetReportInfo(reportID);
 
@@ -452,7 +386,6 @@ app.get("/snitch", async (req, res) => {
         .filter((url) => url.success === 0)
         .map((url) => url.url);
 
-      // logs.report = urls.map((url) => url);
       logs.report = urls;
     }
 
@@ -469,11 +402,6 @@ app.get("/snitch", async (req, res) => {
     console.log(logs.failure);
     console.log(logs.failure.length);
 
-    // logs.clearInterval();
-
-    // data.push(`Analyse terminée en ${seconds} secondes`);
-    // logs.report.push(`Analyse terminée en ${seconds} secondes`);
-    // res.send(`Analyse terminée en ${seconds} secondes`);
     console.log();
 
     console.log(
@@ -497,7 +425,6 @@ app.get("/snitch", async (req, res) => {
     console.log(error);
   }
 
-  // =================
   db.end();
   res.send(logs);
 });
