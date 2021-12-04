@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Snitch from "./Snitch";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
@@ -19,17 +19,18 @@ interface SnitchLog {
   report: URLTableSchema[];
 }
 
+interface IndexRapport {
+  id: string;
+  report_date_start: Date;
+}
+
 const Dashboard = () => {
   const [fetchDataStatus, setfetchDataStatus] = useState("idle");
 
-  const [listeRapports, setListeRapports] = useState<string[]>([
-    "Choisir un rapport",
-  ]);
+  const [listeRapports, setListeRapports] = useState<IndexRapport[]>([]);
   const [reportToFetch, setReportToFetch] =
     useState<string>("Choisir un rapport");
-  const [canFetch, setCanFetch] = useState(
-    fetchDataStatus === "idle" && reportToFetch !== "Choisir un rapport"
-  );
+  const [canFetch, setCanFetch] = useState(true);
 
   const [report, setReport] = useState<SnitchLog>({
     startDate: null,
@@ -42,7 +43,10 @@ const Dashboard = () => {
   useEffect(() => {
     fetch("/report/list")
       .then((res) => res.json())
-      .then((data) => setListeRapports([listeRapports, ...data]));
+      .then((data) => {
+        setListeRapports(data);
+        setReportToFetch(data[0].id);
+      });
   }, []);
 
   const fetchReport = async (route: string): Promise<SnitchLog> => {
@@ -61,13 +65,14 @@ const Dashboard = () => {
     if (canFetch) {
       try {
         setfetchDataStatus("pending");
+        setCanFetch(false);
         const response = await fetchReport(`/report/${reportToFetch}`);
         setReport(response);
       } catch (error) {
         console.log("echec de la récupération des données : " + error);
       } finally {
         setfetchDataStatus("idle");
-        setCanFetch(false);
+        setCanFetch(true);
       }
     }
   };
@@ -84,8 +89,12 @@ const Dashboard = () => {
             }}
           >
             {listeRapports.map((rapport) => (
-              <option value={rapport} key={rapport}>
-                {rapport}
+              <option value={rapport.id} key={rapport.id}>
+                {`${new Date(
+                  rapport.report_date_start
+                ).toLocaleDateString()} - ${new Date(
+                  rapport.report_date_start
+                ).toLocaleTimeString()}`}
               </option>
             ))}
           </Form.Control>
