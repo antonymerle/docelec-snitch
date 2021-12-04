@@ -204,19 +204,23 @@ const getLastReportId = async () => {
 
 const DBGetReportList = async () => {
   interface ReportList {
-    id: number;
+    report_date_start: Date;
   }
   try {
     const response: ReportList[] | null = await new Promise(
       (resolve, reject) => {
-        db.query("SELECT id FROM reports ORDER BY id DESC", (err, result) => {
-          if (err) reject(new Error(err.message));
-          resolve(result);
-        });
+        db.query(
+          "SELECT id, report_date_start FROM reports ORDER BY id DESC",
+          (err, result) => {
+            if (err) reject(new Error(err.message));
+            resolve(result);
+          }
+        );
       }
     );
     console.log(response);
-    return response ? response.map((obj) => obj.id) : null;
+    // return response ? response.map((obj) => obj.report_date_start) : null;
+    return response;
   } catch (error) {
     console.log(error);
   }
