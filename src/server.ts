@@ -1,6 +1,5 @@
 import express from "express";
 import mysql from "mysql";
-
 import puppeteer from "puppeteer";
 import dotenv from "dotenv";
 import { initRessourcesLinks, initTargets } from "./urlAndTargets";
@@ -18,7 +17,10 @@ interface SnitchLog {
 
 const app = express();
 
-// Create MySQL DB connection
+// ---------------- Middlewares ----------------
+app.use(express.json());
+
+// ---------------- Create MySQL DB connection ----------------
 const db = mysql.createConnection({
   host: "localhost",
   user: process.env.MYSQLUSER,
@@ -69,7 +71,22 @@ app.get("/initTables", (req, res) => {
   console.log(erreurs);
 });
 
-// ---------------- Queries ----------------
+// ---------------- Database schemas ----------------
+
+interface ReportTableSchema {
+  id: number;
+  report_date_start: string;
+  report_date_end: string;
+}
+
+interface URLTableSchema {
+  id: number;
+  url: string;
+  success: number;
+  report_id: number;
+}
+
+// ---------------- Database queries ----------------
 
 const DBinsertReport = async () => {
   try {
@@ -103,19 +120,6 @@ const DBinsertURL = async (url: string, success: number, reportId: number) => {
   }
 };
 
-interface URLTableSchema {
-  id: number;
-  url: string;
-  success: number;
-  report_id: number;
-}
-
-interface ReportTableSchema {
-  id: number;
-  report_date_start: string;
-  report_date_end: string;
-}
-
 const DBfetchAllURLs = async (
   reportId: number
 ): Promise<Array<URLTableSchema> | null> => {
@@ -127,7 +131,6 @@ const DBfetchAllURLs = async (
         resolve(result);
       });
     });
-
     return response;
   } catch (error) {
     console.log(error);
@@ -184,10 +187,6 @@ const getLastReportId = async () => {
         resolve(result);
       });
     });
-    console.log(typeof response);
-    console.log(response);
-    console.log(`La réponse est ${response[0]["MAX(id)"]}`);
-
     return response;
   } catch (err) {
     console.log(err);
@@ -211,15 +210,13 @@ const DBGetReportList = async () => {
       }
     );
     console.log(response);
-
     return response;
   } catch (error) {
     console.log(error);
   }
 };
 
-// ---------------- Middlewares ----------------
-app.use(express.json());
+// ---------------- Server routes ----------------
 
 app.get("/test", (req, res) => {
   res.send(["poires", "pommes", "fraises"]);
@@ -313,9 +310,7 @@ app.get("/snitch", async (req, res) => {
     console.log(reportID);
 
     let seconds = 0;
-
     setInterval(() => seconds++, 1000);
-
     let count = 0;
 
     for (let url of URLs) {
@@ -324,7 +319,6 @@ app.get("/snitch", async (req, res) => {
         await page.goto(url);
         const contentPageStr = await page.content();
         const found = contentPageStr.includes("rproxy");
-
         const logLine = `${count}    ${found ? "vérifié" : "échec"}    ${url}`;
         console.log(logLine);
 
