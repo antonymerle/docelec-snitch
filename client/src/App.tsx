@@ -1,6 +1,6 @@
 import "./App.css";
+import "bootstrap/dist/css/bootstrap.min.css";
 import Dashboard from "./components/Dashboard";
-import Snitch from "./components/Snitch";
 
 function App() {
   return (
