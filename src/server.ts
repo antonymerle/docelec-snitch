@@ -4,6 +4,7 @@ import puppeteer from "puppeteer";
 import dotenv from "dotenv";
 import cron from "node-cron";
 import { initRessourcesLinks, initTargets } from "./urlAndTargets";
+import { mailSender } from "./mailer";
 
 dotenv.config({ path: "./config/.env" });
 
@@ -419,6 +420,8 @@ const writeReport = async (): Promise<SnitchLog> => {
   }
 
   // db.end();
+  await mailSender(logs);
+
   return logs;
 };
 
