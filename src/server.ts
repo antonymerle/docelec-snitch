@@ -23,23 +23,29 @@ const app = express();
 app.use(express.json());
 
 // ---------------- Create MySQL DB connection ----------------
-const db = mysql.createConnection({
-  host: "localhost",
-  user: process.env.MYSQLUSER,
-  password: process.env.MYSQLPASSWORD,
-  database: "snitch",
-});
 
-db.connect((err) => {
-  if (err) {
-    throw err;
-  }
-  console.log("MySql connected...");
-});
+const DBConnect = (): mysql.Connection => {
+  const db = mysql.createConnection({
+    host: "localhost",
+    user: process.env.MYSQLUSER,
+    password: process.env.MYSQLPASSWORD,
+    database: "snitch",
+  });
+
+  db.connect((err) => {
+    if (err) {
+      throw err;
+    }
+    console.log("MySql connected...");
+  });
+  return db;
+};
 
 // ---------------- Create DB ----------------
 
 app.get("/createdb", (req, res) => {
+  const db = DBConnect();
+
   const sqlr = "CREATE DATABASE snitch";
   db.query(sqlr, (err, result) => {
     if (err) res.send(err);
@@ -47,11 +53,13 @@ app.get("/createdb", (req, res) => {
 
     res.send("Base de donnée créée ");
   });
+  db.end();
 });
 
 // ---------------- Create tables ----------------
 // TODO : revoir init table backend
 app.get("/initTables", (req, res) => {
+  const db = DBConnect();
   const erreurs: mysql.MysqlError[] = [];
   const sqlrReports =
     "CREATE TABLE reports(id INT AUTO_INCREMENT, report_date_start DATETIME DEFAULT CURRENT_TIMESTAMP, report_date_end DATETIME DEFAULT null, PRIMARY KEY(id))";
@@ -71,6 +79,7 @@ app.get("/initTables", (req, res) => {
     ? res.send(erreurs)
     : res.send('Tables "urls" et "reports" créées');
   console.log(erreurs);
+  db.end();
 });
 
 // ---------------- Database schemas ----------------
@@ -91,6 +100,8 @@ interface URLTableSchema {
 // ---------------- Database queries ----------------
 
 const DBinsertReport = async () => {
+  const db = DBConnect();
+
   try {
     const response: number = await new Promise((resolve, reject) => {
       db.query("INSERT INTO reports VALUES()", (err, result) => {
@@ -99,14 +110,17 @@ const DBinsertReport = async () => {
       });
     });
     console.log(`Row inserted : ${response}`);
+    db.end();
     return response;
   } catch (error) {
+    db.end();
     console.log(error);
     return null;
   }
 };
 
 const DBinsertURL = async (url: string, success: number, reportId: number) => {
+  const db = DBConnect();
   try {
     const response = await new Promise((resolve, reject) => {
       const query = "INSERT INTO urls(url, success, report_id) VALUES(?,?,?)";
@@ -116,15 +130,19 @@ const DBinsertURL = async (url: string, success: number, reportId: number) => {
       });
     });
     console.log(response);
+    db.end();
     return response;
   } catch (error) {
     console.log(error);
+    db.end();
   }
 };
 
 const DBfetchAllURLs = async (
   reportId: number
 ): Promise<Array<URLTableSchema> | null> => {
+  const db = DBConnect();
+
   try {
     const response: URLTableSchema[] = await new Promise((resolve, reject) => {
       const query = "SELECT * FROM urls WHERE report_id = (?)";
@@ -133,14 +151,18 @@ const DBfetchAllURLs = async (
         resolve(result);
       });
     });
+    db.end();
     return response;
   } catch (error) {
     console.log(error);
+    db.end();
     return null;
   }
 };
 
 const DBReportUpdateDateEnd = async (reportId: number) => {
+  const db = DBConnect();
+
   try {
     const response = await new Promise((resolve, reject) => {
       const query =
@@ -150,8 +172,10 @@ const DBReportUpdateDateEnd = async (reportId: number) => {
         resolve(result);
       });
     });
+    db.end();
     console.log(response);
   } catch (error) {
+    db.end();
     console.log(error);
   }
 };
@@ -159,6 +183,7 @@ const DBReportUpdateDateEnd = async (reportId: number) => {
 const DBgetReportInfo = async (
   reportId: number
 ): Promise<ReportTableSchema | null> => {
+  const db = DBConnect();
   try {
     const response: ReportTableSchema[] = await new Promise(
       (resolve, reject) => {
@@ -170,10 +195,11 @@ const DBgetReportInfo = async (
       }
     );
     console.log(response);
-
+    db.end();
     return response[0];
   } catch (error) {
     console.log(error);
+    db.end();
     return null;
   }
 };
@@ -182,6 +208,8 @@ const getLastReportId = async () => {
   interface sqlResponse {
     "MAX(id)": number;
   }
+  const db = DBConnect();
+
   try {
     const response: sqlResponse[] = await new Promise((resolve, reject) => {
       db.query("SELECT MAX(id) FROM reports", (err, result) => {
@@ -189,8 +217,10 @@ const getLastReportId = async () => {
         resolve(result);
       });
     });
+    db.end();
     return response;
   } catch (err) {
+    db.end();
     console.log(err);
   }
 };
@@ -199,6 +229,8 @@ const DBGetReportList = async () => {
   interface ReportList {
     report_date_start: Date;
   }
+  const db = DBConnect();
+
   try {
     const response: ReportList[] | null = await new Promise(
       (resolve, reject) => {
@@ -211,9 +243,11 @@ const DBGetReportList = async () => {
         );
       }
     );
+    db.end();
     console.log(response);
     return response;
   } catch (error) {
+    db.end();
     console.log(error);
   }
 };
@@ -270,21 +304,31 @@ const writeReport = async (): Promise<SnitchLog> => {
     report: [],
   };
 
+  const db = DBConnect();
+
+  // db.connect((err) => {
+  //   if (err) {
+  //     console.log("erreur de connection MySql");
+  //     throw err;
+  //   }
+  //   console.log("MySql connected...");
+  // });
+
   // =====SNITCH()=======
   console.log("Connexion compte test docelec en cours...");
 
   const login = process.env.LOGIN;
   const mdp = process.env.PASSWORD;
 
-  // const URLs = await initRessourcesLinks();
+  const URLs = await initRessourcesLinks();
   const targets = initTargets();
-  const URLs = [
-    "https://parlipapers-proquest-com.rproxy.univ-pau.fr/parlipapers",
-    "http://pubs.acs.org.rproxy.univ-pau.fr/action/showPublications?display=journals",
-    "https://www-alternatives-economiques-fr.rproxy.univ-pau.fr/",
-    "http://www.brepolis.net.rproxy.univ-pau.fr",
-    "https://www.bnds.fr.rproxy.univ-pau.fr",
-  ];
+  // const URLs = [
+  //   "https://parlipapers-proquest-com.rproxy.univ-pau.fr/parlipapers",
+  //   "http://pubs.acs.org.rproxy.univ-pau.fr/action/showPublications?display=journals",
+  //   "https://www-alternatives-economiques-fr.rproxy.univ-pau.fr/",
+  //   "http://www.brepolis.net.rproxy.univ-pau.fr",
+  //   "https://www.bnds.fr.rproxy.univ-pau.fr",
+  // ];
   // const URLs = [
   //   "https://www-scopus-com.rproxy.univ-pau.fr/search/form.uri?display=basic#basic",
   // ];
@@ -419,7 +463,7 @@ const writeReport = async (): Promise<SnitchLog> => {
     console.log(error);
   }
 
-  // db.end();
+  db.end();
   await mailSender(logs);
 
   return logs;
