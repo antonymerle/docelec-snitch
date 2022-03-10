@@ -1,4 +1,8 @@
-import express from "express";
+import readlineSync from "readline-sync";
+import bcrypt, { hash } from "bcrypt";
+import crypto from "crypto";
+
+import express, { response } from "express";
 import mysql from "mysql";
 import puppeteer from "puppeteer";
 import dotenv from "dotenv";
@@ -15,6 +19,16 @@ interface SnitchLog {
   success: string[];
   failure: string[];
   report: URLTableSchema[];
+}
+
+interface Credentials {
+  login: string;
+  hashedPassword: HashedPassword;
+}
+
+interface HashedPassword {
+  initializationVector: string;
+  content: string;
 }
 
 const app = express();
@@ -38,6 +52,7 @@ const DBConnect = (): mysql.Connection => {
     }
     console.log("MySql connected...");
   });
+
   return db;
 };
 
@@ -138,6 +153,34 @@ const DBinsertURL = async (url: string, success: number, reportId: number) => {
   }
 };
 
+const DBinsertCredentials = async (credentials: Credentials) => {
+  const db = DBConnect();
+  try {
+    const response = await new Promise((resolve, reject) => {
+      const query =
+        "INSERT INTO credentials (login, password, iv) VALUES(?,?,?)";
+      db.query(
+        query,
+        [
+          credentials.login,
+          credentials.hashedPassword.content,
+          credentials.hashedPassword.initializationVector,
+        ],
+        (err, result) => {
+          if (err) reject(new Error(err.message));
+          resolve(result);
+        }
+      );
+    });
+    console.log(response);
+    db.end();
+    return response;
+  } catch (error) {
+    console.log(error);
+    db.end();
+  }
+};
+
 const DBfetchAllURLs = async (
   reportId: number
 ): Promise<Array<URLTableSchema> | null> => {
@@ -197,6 +240,25 @@ const DBgetReportInfo = async (
     console.log(response);
     db.end();
     return response[0];
+  } catch (error) {
+    console.log(error);
+    db.end();
+    return null;
+  }
+};
+
+const DBgetCredentials = async (login: string): Promise<Credentials | null> => {
+  const db = DBConnect();
+  try {
+    const response: Credentials = await new Promise((resolve, reject) => {
+      const query = "SELECT * FROM credentials WHERE login = (?)";
+      db.query(query, login, (err, result) => {
+        if (err) reject(new Error(err.message));
+        resolve(result);
+      });
+    });
+    db.end();
+    return response;
   } catch (error) {
     console.log(error);
     db.end();
@@ -317,8 +379,13 @@ const writeReport = async (): Promise<SnitchLog> => {
   // =====SNITCH()=======
   console.log("Connexion compte test docelec en cours...");
 
+  const credentials = await DBgetCredentials("amerle001");
+
   const login = process.env.LOGIN;
-  const mdp = process.env.PASSWORD;
+  let mdp: string = "";
+  if (credentials !== null) {
+    mdp = decrypt(credentials.hashedPassword);
+  }
 
   const URLs = await initRessourcesLinks();
   const targets = initTargets();
@@ -491,3 +558,135 @@ const port = process.env.PORT || 5000;
 app.listen(port, () => {
   console.log(`Serveur démarré sur le port ${port}`);
 });
+
+const initTables = async () => {
+  const db = DBConnect();
+  const erreurs: mysql.MysqlError[] = [];
+  const sqlrReportsQuery =
+    "CREATE TABLE reports(id INT AUTO_INCREMENT, report_date_start DATETIME DEFAULT CURRENT_TIMESTAMP, report_date_end DATETIME DEFAULT null, PRIMARY KEY(id))";
+  db.query(sqlrReportsQuery, (err, result) => {
+    if (err) erreurs.push(err);
+    console.log(result);
+  });
+
+  const sqlrURLSQuery =
+    "CREATE TABLE urls(id INT AUTO_INCREMENT, url VARCHAR(255), success TINYINT, report_id INT, PRIMARY KEY(id), FOREIGN KEY(report_id) REFERENCES reports(id))";
+  db.query(sqlrURLSQuery, (err, result) => {
+    if (err) erreurs.push(err);
+    console.log(result);
+  });
+
+  const sqlCredentialsQuery =
+    "CREATE TABLE credentials(id INT AUTO_INCREMENT, login VARCHAR(10), password VARCHAR(256), iv VARCHAR(256), PRIMARY KEY(id))";
+  db.query(sqlCredentialsQuery, (err, result) => {
+    if (err) erreurs.push(err);
+    console.log(result);
+  });
+
+  erreurs.length > 0
+    ? console.log(erreurs)
+    : console.log('Tables "urls", "reports" et "credentials" créées');
+
+  db.end();
+};
+
+const areTablesCreated = async (): Promise<boolean> => {
+  const db = DBConnect();
+  try {
+    const response: any = await new Promise((resolve, reject) => {
+      const query = "SHOW TABLES";
+      db.query(query, (err, result) => {
+        if (err) reject(new Error(err.message));
+        resolve(result);
+      });
+    });
+
+    db.end();
+    if (response.length === 3) {
+      // console.log(response);
+      console.log("Toutes les tables sont présentes :");
+      response.forEach((table: any) => {
+        console.log(table.Tables_in_snitch);
+      });
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.log(error);
+    db.end();
+    return false;
+  }
+};
+
+const aquireCredentials = async (): Promise<Credentials> => {
+  const login = readlineSync.question("Entrez votre login de compte UPPA");
+  const password = readlineSync.question("Entrez votre mot de passe", {
+    hideEchoBack: true,
+  });
+
+  const hashedPassword: HashedPassword = encrypt(password);
+  const credentials: Credentials = { login, hashedPassword };
+
+  return credentials;
+};
+
+const encrypt = (text: string): HashedPassword => {
+  const algorithm = "aes-256-ctr";
+  const secretKey: string = process.env.SECRETKEY
+    ? process.env.SECRETKEY
+    : "undefined";
+  const iv = crypto.randomBytes(16);
+
+  const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
+
+  const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
+
+  return {
+    initializationVector: iv.toString("hex"),
+    content: encrypted.toString("hex"),
+  };
+};
+
+const decrypt = (hash: HashedPassword): string => {
+  const algorithm = "aes-256-ctr";
+  const secretKey: string = process.env.SECRETKEY
+    ? process.env.SECRETKEY
+    : "undefined";
+
+  const decipher = crypto.createDecipheriv(
+    algorithm,
+    secretKey,
+    Buffer.from(hash.initializationVector, "hex")
+  );
+
+  const plain = Buffer.concat([
+    decipher.update(Buffer.from(hash.content, "hex")),
+    decipher.final(),
+  ]);
+
+  return plain.toString();
+};
+
+// init process
+(async () => {
+  // test if table present
+  if ((await areTablesCreated()) == false) {
+    console.log("Tables absentes, initialisation");
+    await initTables();
+    // const credentials = await aquireCredentials();
+    // console.log(credentials);
+
+    // DBinsertCredentials(credentials);
+  } else {
+    const credentials = await aquireCredentials();
+    console.log(credentials);
+    await DBinsertCredentials(credentials);
+  }
+})();
+
+// .then(async () => {
+//   const credentials = await aquireCredentials();
+//   console.log(credentials);
+
+//   await DBinsertCredentials(credentials);
+// });

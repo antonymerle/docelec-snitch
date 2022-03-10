@@ -44,8 +44,11 @@ const Dashboard = () => {
     fetch("/report/list")
       .then((res) => res.json())
       .then((data) => {
-        setListeRapports(data);
-        setReportToFetch(data[0].id);
+        if(data.length > 0){
+          setListeRapports(data);
+          setReportToFetch(data[0].id);
+        }
+        
       });
   }, []);
 
