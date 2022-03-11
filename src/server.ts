@@ -160,7 +160,7 @@ const DBinsertCredentials = async (credentials: Credentials) => {
       const query =
         "INSERT INTO credentials (login, password, iv) VALUES(?,?,?)";
       db.query(
-        query,
+        { sql: query, timeout: 40000 },
         [
           credentials.login,
           credentials.hashedPassword.content,
@@ -249,8 +249,13 @@ const DBgetReportInfo = async (
 
 const DBgetCredentials = async (login: string): Promise<Credentials | null> => {
   const db = DBConnect();
+  let hashedPassword: HashedPassword = {
+    content: "",
+    initializationVector: "",
+  };
+  let credentials: Credentials = { login, hashedPassword };
   try {
-    const response: Credentials = await new Promise((resolve, reject) => {
+    const response: any = await new Promise((resolve, reject) => {
       const query = "SELECT * FROM credentials WHERE login = (?)";
       db.query(query, login, (err, result) => {
         if (err) reject(new Error(err.message));
@@ -258,7 +263,14 @@ const DBgetCredentials = async (login: string): Promise<Credentials | null> => {
       });
     });
     db.end();
-    return response;
+    console.log("DBgetCredentials :");
+
+    credentials.hashedPassword.content = response[0].password;
+    credentials.hashedPassword.initializationVector = response[0].iv;
+
+    console.log(credentials);
+
+    return credentials;
   } catch (error) {
     console.log(error);
     db.end();
@@ -380,6 +392,9 @@ const writeReport = async (): Promise<SnitchLog> => {
   console.log("Connexion compte test docelec en cours...");
 
   const credentials = await DBgetCredentials("amerle001");
+  console.log("writereport");
+
+  console.log(credentials);
 
   const login = process.env.LOGIN;
   let mdp: string = "";
@@ -618,6 +633,32 @@ const areTablesCreated = async (): Promise<boolean> => {
   }
 };
 
+const isAccountProvided = async (): Promise<boolean> => {
+  const db = DBConnect();
+  try {
+    const response: any = await new Promise((resolve, reject) => {
+      const query = "SELECT * FROM credentials";
+      db.query(query, (err, result) => {
+        if (err) reject(new Error(err.message));
+        resolve(result);
+      });
+    });
+
+    db.end();
+    if (response.length > 0) {
+      // console.log(response);
+      console.log("Compte uppa présent.");
+
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.log(error);
+    db.end();
+    return false;
+  }
+};
+
 const aquireCredentials = async (): Promise<Credentials> => {
   const login = readlineSync.question("Entrez votre login de compte UPPA");
   const password = readlineSync.question("Entrez votre mot de passe", {
@@ -626,6 +667,9 @@ const aquireCredentials = async (): Promise<Credentials> => {
 
   const hashedPassword: HashedPassword = encrypt(password);
   const credentials: Credentials = { login, hashedPassword };
+
+  console.log("acquireCredentials");
+  console.log(credentials);
 
   return credentials;
 };
@@ -676,11 +720,13 @@ const decrypt = (hash: HashedPassword): string => {
     // const credentials = await aquireCredentials();
     // console.log(credentials);
 
-    // DBinsertCredentials(credentials);
-  } else {
+    // await DBinsertCredentials(credentials);
+  } else if ((await isAccountProvided()) === false) {
     const credentials = await aquireCredentials();
-    console.log(credentials);
+    // console.log(credentials);
     await DBinsertCredentials(credentials);
+  } else {
+    writeReport();
   }
 })();
 
