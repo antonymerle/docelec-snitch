@@ -29,38 +29,43 @@ export async function mailSender(rapport: SnitchLog) {
   // let testAccount = await nodemailer.createTestAccount();
 
   // create reusable transporter object using the default SMTP transport
-  let transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true, // true for 465, false for other ports
-    auth: {
-      user: process.env.GMAILUSER, // generated ethereal user
-      pass: process.env.GMAILPASSWORD, // generated ethereal password
-    },
-  });
 
-  let corpsMessage = "";
-  for (let failure of rapport.failure) {
-    corpsMessage += `<p><a href="${failure}">${failure}</a></p>`;
+  try {
+    let transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true, // true for 465, false for other ports
+      auth: {
+        user: process.env.GMAILUSER, // generated ethereal user
+        pass: process.env.GMAILPASSWORD, // generated ethereal password
+      },
+    });
+
+    let corpsMessage = "";
+    for (let failure of rapport.failure) {
+      corpsMessage += `<p><a href="${failure}">${failure}</a></p>`;
+    }
+
+    let mailHTML = `<html><body><h1>Rapport d'échec du ${rapport.startDate?.toLocaleDateString()} à ${rapport.startDate?.toLocaleTimeString()}</h1>${corpsMessage}<p>Consultable sur <a href="http://localhost:3000/">Snitch</a></p></body></html>`;
+
+    // send mail with defined transport object
+    let info = await transporter.sendMail({
+      from: '"Snitch 👻" <foo@snitch.com>', // sender address
+      to: "antony.merle@gmail.com", // list of receivers
+      subject: "Rapport d'analyse docelec ✔", // Subject line
+      // text: "Hello world?", // plain text body
+      html: mailHTML, // html body
+    });
+
+    console.log("Message sent: %s", info.messageId);
+    // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
+
+    // Preview only available when sending through an Ethereal account
+    console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
+    // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
+  } catch (error) {
+    console.log("Echec de l'envoi du mail de rapport:\n" + error);
   }
-
-  let mailHTML = `<html><body><h1>Rapport d'échec du ${rapport.startDate?.toLocaleDateString()} à ${rapport.startDate?.toLocaleTimeString()}</h1>${corpsMessage}<p>Consultable sur <a href="http://localhost:3000/">Snitch</a></p></body></html>`;
-
-  // send mail with defined transport object
-  let info = await transporter.sendMail({
-    from: '"Snitch 👻" <foo@snitch.com>', // sender address
-    to: "antony.merle@gmail.com", // list of receivers
-    subject: "Rapport d'analyse docelec ✔", // Subject line
-    // text: "Hello world?", // plain text body
-    html: mailHTML, // html body
-  });
-
-  console.log("Message sent: %s", info.messageId);
-  // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
-
-  // Preview only available when sending through an Ethereal account
-  console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-  // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
 }
 
 // mailSender().catch(console.error);
