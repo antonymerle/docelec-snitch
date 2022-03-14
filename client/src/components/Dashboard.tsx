@@ -82,6 +82,9 @@ const Dashboard = () => {
 
   return (
     <div>
+      
+    <div className="liste-rapports">
+    <h2>Sélectionnez un rapport d'analyse</h2>
       <Form className="form-item">
         <Form.Group>
           <Form.Control
@@ -104,10 +107,12 @@ const Dashboard = () => {
         </Form.Group>
       </Form>
 
-      <Button variant="dark" onClick={onFetch}>
+      <Button variant="dark" onClick={onFetch} className="bouton">
         Afficher l'analyse
       </Button>
-      <Snitch report={report} />
+      
+    </div>
+    <Snitch report={report} />
     </div>
   );
 };
