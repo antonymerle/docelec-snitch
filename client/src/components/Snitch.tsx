@@ -20,7 +20,8 @@ interface Props {
 
 const Snitch: React.FC<Props> = ({ report }) => {
   return (
-    <div>
+    report.durationInSeconds === -1 ?  null :
+    <div className="rapport">
       <h3>Informations générales</h3>
       {report.startDate ? (
         <p>
