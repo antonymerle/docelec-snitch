@@ -247,7 +247,9 @@ const DBgetReportInfo = async (
   }
 };
 
-const DBgetCredentials = async (login: string): Promise<Credentials | null> => {
+export const DBgetCredentials = async (
+  login: string
+): Promise<Credentials | null> => {
   const db = DBConnect();
   let hashedPassword: HashedPassword = {
     content: "",
@@ -556,18 +558,6 @@ app.get("/snitch", async (req, res) => {
   res.send(logs);
 });
 
-cron.schedule(
-  "0 6,13 * * *",
-  () => {
-    console.log("Lancement job à 06:00 et 13:00 Paris UTC+1");
-    writeReport();
-  },
-  {
-    scheduled: true,
-    timezone: "Europe/Paris",
-  }
-);
-
 const port = process.env.PORT || 5000;
 
 app.listen(port, () => {
@@ -691,7 +681,7 @@ const encrypt = (text: string): HashedPassword => {
   };
 };
 
-const decrypt = (hash: HashedPassword): string => {
+export const decrypt = (hash: HashedPassword): string => {
   const algorithm = "aes-256-ctr";
   const secretKey: string = process.env.SECRETKEY
     ? process.env.SECRETKEY
@@ -726,7 +716,29 @@ const decrypt = (hash: HashedPassword): string => {
     // console.log(credentials);
     await DBinsertCredentials(credentials);
   } else {
-    writeReport();
+    // writeReport();
+
+    cron.schedule(
+      "0 6,13 * * *",
+      () => {
+        console.log("Lancement job à 06:00 et 13:00 Paris UTC+1");
+        writeReport();
+      },
+      {
+        scheduled: true,
+        timezone: "Europe/Paris",
+      }
+    );
+
+    // const log: SnitchLog = {
+    //   durationInSeconds: 30,
+    //   endDate: new Date(),
+    //   startDate: new Date(),
+    //   failure: ["failure"],
+    //   success: ["success"],
+    //   report: [],
+    // };
+    // await mailSender(log);
   }
 })();
 
