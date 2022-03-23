@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
-    "lib": ["esnext", "DOM"],
-    "target": "es6",
+    "lib": [
+      "esnext",
+      "DOM"
+    ],
+    "target": "es2020",
     "module": "commonjs",
     "outDir": "dist",
     "rootDir": "src",
@@ -10,7 +13,11 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }

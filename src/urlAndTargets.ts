@@ -11,7 +11,7 @@ export const initRessourcesLinks = async (): Promise<string[]> => {
   let ressourcesLink: (string | null)[] = [];
 
   try {
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({headless :true, args: ['--no-sandbox']});
     const page = await browser.newPage();
 
     for (let url of publicAccessPages) {

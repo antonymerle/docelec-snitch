@@ -1,16 +1,16 @@
 import readlineSync from "readline-sync";
-import bcrypt, { hash } from "bcrypt";
 import crypto from "crypto";
 
-import express, { response } from "express";
-import mysql from "mysql";
+import express from "express";
+import mysql from "mysql2";
+import { OkPacket, RowDataPacket } from "mysql2";
 import puppeteer from "puppeteer";
 import dotenv from "dotenv";
 import cron from "node-cron";
 import { initRessourcesLinks, initTargets } from "./urlAndTargets";
 import { mailSender } from "./mailer";
 
-dotenv.config({ path: "./config/.env" });
+dotenv.config({ path: "../config/.env" });
 
 interface SnitchLog {
   startDate: null | Date;
@@ -39,6 +39,12 @@ app.use(express.json());
 // ---------------- Create MySQL DB connection ----------------
 
 const DBConnect = (): mysql.Connection => {
+
+  console.log("dotenv");
+  
+  console.log(process.env.MYSQLUSER);
+  
+
   const db = mysql.createConnection({
     host: "localhost",
     user: process.env.MYSQLUSER,
@@ -50,7 +56,7 @@ const DBConnect = (): mysql.Connection => {
     if (err) {
       throw err;
     }
-    console.log("MySql connected...");
+    console.log("MySql connecté...");
   });
 
   return db;
@@ -58,44 +64,44 @@ const DBConnect = (): mysql.Connection => {
 
 // ---------------- Create DB ----------------
 
-app.get("/createdb", (req, res) => {
-  const db = DBConnect();
+// app.get("/createdb", (req, res) => {
+//   const db = DBConnect();
 
-  const sqlr = "CREATE DATABASE snitch";
-  db.query(sqlr, (err, result) => {
-    if (err) res.send(err);
-    console.log(result);
+//   const sqlr = "CREATE DATABASE snitch";
+//   db.query(sqlr, (err, result) => {
+//     if (err) res.send(err);
+//     console.log(result);
 
-    res.send("Base de donnée créée ");
-  });
-  db.end();
-});
+//     res.send("Base de donnée créée ");
+//   });
+//   db.end();
+// });
 
 // ---------------- Create tables ----------------
 // TODO : revoir init table backend
-app.get("/initTables", (req, res) => {
-  const db = DBConnect();
-  const erreurs: mysql.MysqlError[] = [];
-  const sqlrReports =
-    "CREATE TABLE reports(id INT AUTO_INCREMENT, report_date_start DATETIME DEFAULT CURRENT_TIMESTAMP, report_date_end DATETIME DEFAULT null, PRIMARY KEY(id))";
-  db.query(sqlrReports, (err, result) => {
-    if (err) erreurs.push(err);
-    console.log(result);
-  });
+// app.get("/initTables", (req, res) => {
+//   const db = DBConnect();
+//   const erreurs: mysql.QueryError[] = [];
+//   const sqlrReports =
+//     "CREATE TABLE reports(id INT AUTO_INCREMENT, report_date_start DATETIME DEFAULT CURRENT_TIMESTAMP, report_date_end DATETIME DEFAULT null, PRIMARY KEY(id))";
+//   db.query(sqlrReports, (err, result) => {
+//     if (err) erreurs.push(err);
+//     console.log(result);
+//   });
 
-  const sqlrURLS =
-    "CREATE TABLE urls(id INT AUTO_INCREMENT, url VARCHAR(255), success TINYINT, report_id INT, PRIMARY KEY(id), FOREIGN KEY(report_id) REFERENCES reports(id))";
-  db.query(sqlrURLS, (err, result) => {
-    if (err) erreurs.push(err);
-    console.log(result);
-  });
+//   const sqlrURLS =
+//     "CREATE TABLE urls(id INT AUTO_INCREMENT, url VARCHAR(255), success TINYINT, report_id INT, PRIMARY KEY(id), FOREIGN KEY(report_id) REFERENCES reports(id))";
+//   db.query(sqlrURLS, (err, result) => {
+//     if (err) erreurs.push(err);
+//     console.log(result);
+//   });
 
-  erreurs.length > 0
-    ? res.send(erreurs)
-    : res.send('Tables "urls" et "reports" créées');
-  console.log(erreurs);
-  db.end();
-});
+//   erreurs.length > 0
+//     ? res.send(erreurs)
+//     : res.send('Tables "urls" et "reports" créées');
+//   console.log(erreurs);
+//   db.end();
+// });
 
 // ---------------- Database schemas ----------------
 
@@ -121,7 +127,7 @@ const DBinsertReport = async () => {
     const response: number = await new Promise((resolve, reject) => {
       db.query("INSERT INTO reports VALUES()", (err, result) => {
         if (err) reject(new Error(err.message));
-        resolve(result.insertId);
+        resolve((<OkPacket> result).insertId);
       });
     });
     console.log(`Row inserted : ${response}`);
@@ -191,7 +197,7 @@ const DBfetchAllURLs = async (
       const query = "SELECT * FROM urls WHERE report_id = (?)";
       db.query(query, reportId, (err, result) => {
         if (err) reject(new Error(err.message));
-        resolve(result);
+        resolve(result as URLTableSchema[]);
       });
     });
     db.end();
@@ -233,7 +239,7 @@ const DBgetReportInfo = async (
         const query = "SELECT * FROM reports WHERE id = (?)";
         db.query(query, reportId, (err, result) => {
           if (err) reject(new Error(err.message));
-          resolve(result);
+          resolve(result as ReportTableSchema[]);
         });
       }
     );
@@ -287,10 +293,10 @@ const getLastReportId = async () => {
   const db = DBConnect();
 
   try {
-    const response: sqlResponse[] = await new Promise((resolve, reject) => {
+    const response: mysql.RowDataPacket[] = await new Promise((resolve, reject) => {
       db.query("SELECT MAX(id) FROM reports", (err, result) => {
         if (err) reject(new Error(err.message));
-        resolve(result);
+        resolve(result as RowDataPacket[]);
       });
     });
     db.end();
@@ -314,7 +320,7 @@ const DBGetReportList = async () => {
           "SELECT id, report_date_start FROM reports ORDER BY id DESC",
           (err, result) => {
             if (err) reject(new Error(err.message));
-            resolve(result);
+            resolve(result as ReportList[]);
           }
         );
       }
@@ -393,12 +399,13 @@ const writeReport = async (): Promise<SnitchLog> => {
   // =====SNITCH()=======
   console.log("Connexion compte test docelec en cours...");
 
-  const credentials = await DBgetCredentials("amerle001");
+  const login = process.env.LOGIN;
+
+  const credentials = await DBgetCredentials(login as string);
   console.log("writereport");
 
   console.log(credentials);
 
-  const login = process.env.LOGIN;
   let mdp: string = "";
   if (credentials !== null) {
     mdp = decrypt(credentials.hashedPassword);
@@ -417,10 +424,12 @@ const writeReport = async (): Promise<SnitchLog> => {
   //   "https://www-scopus-com.rproxy.univ-pau.fr/search/form.uri?display=basic#basic",
   // ];
 
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({headless :true, args: ['--no-sandbox']});
   const page = await browser.newPage();
 
   try {
+
+
     await page.goto("https://www-cairn-info.rproxy.univ-pau.fr/");
 
     await page.type("#username", login as string);
@@ -566,7 +575,7 @@ app.listen(port, () => {
 
 const initTables = async () => {
   const db = DBConnect();
-  const erreurs: mysql.MysqlError[] = [];
+  const erreurs: mysql.QueryError[] = [];
   const sqlrReportsQuery =
     "CREATE TABLE reports(id INT AUTO_INCREMENT, report_date_start DATETIME DEFAULT CURRENT_TIMESTAMP, report_date_end DATETIME DEFAULT null, PRIMARY KEY(id))";
   db.query(sqlrReportsQuery, (err, result) => {
@@ -716,7 +725,7 @@ export const decrypt = (hash: HashedPassword): string => {
     // console.log(credentials);
     await DBinsertCredentials(credentials);
   } else {
-    // writeReport();
+    writeReport();
 
     cron.schedule(
       "0 6,13 * * *",
