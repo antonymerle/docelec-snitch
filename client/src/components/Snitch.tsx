@@ -47,7 +47,7 @@ const Snitch: React.FC<Props> = ({ report }) => {
         <p key={line}>{line}</p>
       ))}
 
-      <h3>Ressources testées : </h3>
+      <h3>Rapport complet des ressources testées : </h3>
       {report.report.map((line) => (
         <p
           key={line.id}
