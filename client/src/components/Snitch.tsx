@@ -20,43 +20,46 @@ interface Props {
 
 const Snitch: React.FC<Props> = ({ report }) => {
   return (
-    report.durationInSeconds === -1 ?  null :
-    <div className="rapport">
-      <h3>Informations générales</h3>
-      {report.startDate ? (
+    report.durationInSeconds === -1 ? null :
+      <div className="rapport">
+        <h3>Informations générales</h3>
+        {report.startDate ? (
+          <p>
+            Analyse commencée le {new Date(report.startDate).toLocaleDateString()}
+            {" "}à {new Date(report.startDate).toLocaleTimeString()} et réalisée en {report.durationInSeconds} secondes.
+          </p>
+        ) : null}
+
         <p>
-          Analyse commencée le {new Date(report.startDate).toLocaleDateString()}
-          à {new Date(report.startDate).toLocaleTimeString()}
-        </p>
-      ) : null}
+          {report.report.length} ressources scannées :</p>
+        <ul>
+          <li>{report.success.length} sont
+            OK ;</li>
+          <li>{report.failure.length} échecs.</li>
+        </ul>
 
-      <p>Analyse réalisée en {report.durationInSeconds} secondes.</p>
-      <p>
-        {report.report.length} ressources scannées. {report.success.length} sont
-        OK - {report.failure.length} échecs.
-      </p>
 
-      <h3>{report.failure.length} échecs (à vérifier manuellement)</h3>
+        <h3>{report.failure.length} échecs (à vérifier manuellement)</h3>
 
-      {report.failure.map((line) => (
-        <p key={line}>{line}</p>
-      ))}
+        {report.failure.map((line) => (
+          <p key={line}><a href={line}>{line}</a></p>
+        ))}
 
-      <h3>Ressources vérifiées avec succès : {report.success.length}</h3>
-      {report.success.map((line) => (
-        <p key={line}>{line}</p>
-      ))}
+        <h3>Ressources vérifiées avec succès : {report.success.length}</h3>
+        {report.success.map((line) => (
+          <p key={line}>{line}</p>
+        ))}
 
-      <h3>Rapport complet des ressources testées : </h3>
-      {report.report.map((line) => (
-        <p
-          key={line.id}
-          style={line.success === 1 ? { color: "green" } : { color: "red" }}
-        >
-          {line.url} : {line.success === 1 ? "Succès" : "Echec"}
-        </p>
-      ))}
-    </div>
+        <h3>Rapport complet des ressources testées : </h3>
+        {report.report.map((line) => (
+          <p
+            key={line.id}
+            style={line.success === 1 ? { color: "green" } : { color: "red" }}
+          >
+            {line.url} : {line.success === 1 ? "Succès" : "Echec"}
+          </p>
+        ))}
+      </div>
   );
 };
 
