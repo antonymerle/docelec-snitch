@@ -734,8 +734,7 @@ export const decrypt = (hash: HashedPassword): string => {
     // console.log(credentials);
     await DBinsertCredentials(credentials);
   } else {
-    writeReport();
-
+    // writeReport();
     cron.schedule(
       "0 6,13 * * *",
       () => {
