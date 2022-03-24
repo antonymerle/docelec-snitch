@@ -36,13 +36,13 @@ export async function mailSender(rapport: SnitchLog) {
       corpsMessage += `<p><a href="${failure}">${failure}</a></p>`;
     }
 
-    let mailHTML = `<html><body><h1>Rapport d'échec du ${rapport.startDate?.toLocaleDateString()} à ${rapport.startDate?.toLocaleTimeString()}</h1>${corpsMessage}<p>Consultable sur <a href="http://localhost:3000/">Snitch</a></p></body></html>`;
+    let mailHTML = `<html><body><h1>Rapport du ${rapport.startDate?.toLocaleDateString()} à ${rapport.startDate?.toLocaleTimeString()}. ${rapport.failure.length} Echecs</h1>${corpsMessage}<p>Consultable sur <a href="http://vm-scd.univ-pau.fr/snitch">Snitch</a></p></body></html>`;
 
     // send mail with defined transport object
     let info = await transporter.sendMail({
-      from: "scd.uppa@yahoo.com",
-      to: "antony.merle@gmail.com",
-      subject: "👻 Rapport d'analyse docelec ✔",
+      from: process.env.MAILSENDER,
+      to: process.env.MAILRECEIVER1,
+      subject: `👻 Rapport d'analyse docelec (${rapport.failure.length} ❌)`,
       html: mailHTML,
     });
 
