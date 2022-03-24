@@ -41,14 +41,14 @@ const Dashboard = () => {
     report: [],
   });
   useEffect(() => {
-    fetch("/report/list")
+    fetch("/snitch/report/list")
       .then((res) => res.json())
       .then((data) => {
-        if(data.length > 0){
+        if (data.length > 0) {
           setListeRapports(data);
           setReportToFetch(data[0].id);
         }
-        
+
       });
   }, []);
 
@@ -69,7 +69,7 @@ const Dashboard = () => {
       try {
         setfetchDataStatus("pending");
         setCanFetch(false);
-        const response = await fetchReport(`/report/${reportToFetch}`);
+        const response = await fetchReport(`/snitch/report/${reportToFetch}`);
         setReport(response);
       } catch (error) {
         console.log("echec de la récupération des données : " + error);
@@ -82,37 +82,37 @@ const Dashboard = () => {
 
   return (
     <div>
-      
-    <div className="liste-rapports">
-    <h2>Constuler un rapport d'analyse</h2>
-      <Form className="form-item">
-        <Form.Group>
-          <Form.Control
-            as="select"
-            onChange={(e) => {
-              setReportToFetch(e.target.value);
-              setCanFetch(true);
-            }}
-          >
-            {listeRapports.map((rapport) => (
-              <option value={rapport.id} key={rapport.id}>
-                {`${new Date(
-                  rapport.report_date_start
-                ).toLocaleDateString()} - ${new Date(
-                  rapport.report_date_start
-                ).toLocaleTimeString()}`}
-              </option>
-            ))}
-          </Form.Control>
-        </Form.Group>
-      </Form>
 
-      <Button variant="dark" onClick={onFetch} className="bouton">
-        Afficher l'analyse
-      </Button>
-      
-    </div>
-    <Snitch report={report} />
+      <div className="liste-rapports">
+        <h2>Consulter un rapport d'analyse</h2>
+        <Form className="form-item">
+          <Form.Group>
+            <Form.Control
+              as="select"
+              onChange={(e) => {
+                setReportToFetch(e.target.value);
+                setCanFetch(true);
+              }}
+            >
+              {listeRapports.map((rapport) => (
+                <option value={rapport.id} key={rapport.id}>
+                  {`${new Date(
+                    rapport.report_date_start
+                  ).toLocaleDateString()} - ${new Date(
+                    rapport.report_date_start
+                  ).toLocaleTimeString()}`}
+                </option>
+              ))}
+            </Form.Control>
+          </Form.Group>
+        </Form>
+
+        <Button variant="dark" onClick={onFetch} className="bouton">
+          Afficher l'analyse
+        </Button>
+
+      </div>
+      <Snitch report={report} />
     </div>
   );
 };
