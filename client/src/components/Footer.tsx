@@ -5,15 +5,14 @@ import React from "react";
 // Y => bug or maintenance correction (dataset change in api)
 
 // LOG
-// 0.1  beta
+// 0.1  lancement beta
 
 export const Footer: React.FC = () => {
   return (
     <div className="footer">
-    <p>Chaque jour, un rapport est généré à 6h00 et 13h00.</p>
+      <p>Chaque jour, un rapport est généré à 6h00 et à 13h00.</p>
       <p >
-        
-          Docelec-Snitch
+        <a href="https://github.com/waldganger/docelec-snitch">Docelec-Snitch</a>
         {" "}
         {new Date().getFullYear()} -- v 0.1
       </p>
