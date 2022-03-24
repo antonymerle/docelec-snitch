@@ -1,6 +1,5 @@
 import readlineSync from "readline-sync";
 import crypto from "crypto";
-
 import express from "express";
 import mysql from "mysql2";
 import { OkPacket, RowDataPacket } from "mysql2";
@@ -9,6 +8,7 @@ import dotenv from "dotenv";
 import cron from "node-cron";
 import { initRessourcesLinks, initTargets } from "./urlAndTargets";
 import { mailSender } from "./mailer";
+import path from "path/posix";
 
 dotenv.config({ path: "../config/.env" });
 
@@ -35,6 +35,15 @@ const app = express();
 
 // ---------------- Middlewares ----------------
 app.use(express.json());
+
+// Serve client
+app.use(express.static('public'))
+app.use(express.static(path.join(__dirname + '/../client/build/')))
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname + '/../client/build/index.html'));
+  });
+  
 
 // ---------------- Create MySQL DB connection ----------------
 
