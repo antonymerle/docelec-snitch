@@ -2,7 +2,6 @@ import puppeteer from "puppeteer";
 
 export const initRessourcesLinks = async (): Promise<string[]> => {
   const publicAccessPages = [
-    // "https://www.scrapethissite.com/pages/",
     "https://bibliotheques.univ-pau.fr/fr/documentation/bases-de-donnees.html",
     "https://bibliotheques.univ-pau.fr/fr/documentation/livres-electroniques.html",
     "https://bibliotheques.univ-pau.fr/fr/documentation/encyclopedies-et-dictionnaires.html",
@@ -15,7 +14,6 @@ export const initRessourcesLinks = async (): Promise<string[]> => {
     const page = await browser.newPage();
 
     for (let url of publicAccessPages) {
-      // console.log(url);
       await page.goto(url);
       const rproxyLinks = await page.evaluate(() => {
         let links: (string | null)[] = Array.from(
@@ -25,7 +23,6 @@ export const initRessourcesLinks = async (): Promise<string[]> => {
           .filter((link) => link?.includes("rproxy"));
         return links;
       });
-      // console.log(test);
       ressourcesLink.push(...rproxyLinks);
     }
     await browser.close();
@@ -33,10 +30,8 @@ export const initRessourcesLinks = async (): Promise<string[]> => {
     console.log(error);
   }
 
-  // ressourcesLink.forEach((url) => console.log(url));
-  // console.log(ressourcesLink.length);
+
   const set = Array.from(new Set(ressourcesLink));
-  // console.log(set.length);
   return set as string[];
 };
 
@@ -76,6 +71,3 @@ export const initTargets = (): string[] => {
     ])
   );
 };
-
-// export default initRessourcesLinks;
-// export default initTargets;

@@ -71,47 +71,6 @@ const DBConnect = (): mysql.Connection => {
   return db;
 };
 
-// ---------------- Create DB ----------------
-
-// app.get("/createdb", (req, res) => {
-//   const db = DBConnect();
-
-//   const sqlr = "CREATE DATABASE snitch";
-//   db.query(sqlr, (err, result) => {
-//     if (err) res.send(err);
-//     console.log(result);
-
-//     res.send("Base de donnée créée ");
-//   });
-//   db.end();
-// });
-
-// ---------------- Create tables ----------------
-// TODO : revoir init table backend
-// app.get("/initTables", (req, res) => {
-//   const db = DBConnect();
-//   const erreurs: mysql.QueryError[] = [];
-//   const sqlrReports =
-//     "CREATE TABLE reports(id INT AUTO_INCREMENT, report_date_start DATETIME DEFAULT CURRENT_TIMESTAMP, report_date_end DATETIME DEFAULT null, PRIMARY KEY(id))";
-//   db.query(sqlrReports, (err, result) => {
-//     if (err) erreurs.push(err);
-//     console.log(result);
-//   });
-
-//   const sqlrURLS =
-//     "CREATE TABLE urls(id INT AUTO_INCREMENT, url VARCHAR(255), success TINYINT, report_id INT, PRIMARY KEY(id), FOREIGN KEY(report_id) REFERENCES reports(id))";
-//   db.query(sqlrURLS, (err, result) => {
-//     if (err) erreurs.push(err);
-//     console.log(result);
-//   });
-
-//   erreurs.length > 0
-//     ? res.send(erreurs)
-//     : res.send('Tables "urls" et "reports" créées');
-//   console.log(erreurs);
-//   db.end();
-// });
-
 // ---------------- Database schemas ----------------
 
 interface ReportTableSchema {
@@ -397,13 +356,6 @@ const writeReport = async (): Promise<SnitchLog> => {
 
   const db = DBConnect();
 
-  // db.connect((err) => {
-  //   if (err) {
-  //     console.log("erreur de connection MySql");
-  //     throw err;
-  //   }
-  //   console.log("MySql connected...");
-  // });
 
   // =====SNITCH()=======
   console.log("Connexion compte test docelec en cours...");
@@ -422,16 +374,6 @@ const writeReport = async (): Promise<SnitchLog> => {
 
   const URLs = await initRessourcesLinks();
   const targets = initTargets();
-  // const URLs = [
-  //   "https://parlipapers-proquest-com.rproxy.univ-pau.fr/parlipapers",
-  //   "http://pubs.acs.org.rproxy.univ-pau.fr/action/showPublications?display=journals",
-  //   "https://www-alternatives-economiques-fr.rproxy.univ-pau.fr/",
-  //   "http://www.brepolis.net.rproxy.univ-pau.fr",
-  //   "https://www.bnds.fr.rproxy.univ-pau.fr",
-  // ];
-  // const URLs = [
-  //   "https://www-scopus-com.rproxy.univ-pau.fr/search/form.uri?display=basic#basic",
-  // ];
 
   const browser = await puppeteer.launch({headless :true, args: ['--no-sandbox']});
   const page = await browser.newPage();
@@ -626,7 +568,6 @@ const areTablesCreated = async (): Promise<boolean> => {
 
     db.end();
     if (response.length === 3) {
-      // console.log(response);
       console.log("Toutes les tables sont présentes :");
       response.forEach((table: any) => {
         console.log(table.Tables_in_snitch);
@@ -654,7 +595,6 @@ const isAccountProvided = async (): Promise<boolean> => {
 
     db.end();
     if (response.length > 0) {
-      // console.log(response);
       console.log("Compte uppa présent.");
 
       return true;
@@ -726,12 +666,11 @@ export const decrypt = (hash: HashedPassword): string => {
     console.log("Tables absentes, initialisation");
     await initTables();
     // const credentials = await aquireCredentials();
-    // console.log(credentials);
+    // console.log(credentials); // password is hashed
 
     // await DBinsertCredentials(credentials);
   } else if ((await isAccountProvided()) === false) {
     const credentials = await aquireCredentials();
-    // console.log(credentials);
     await DBinsertCredentials(credentials);
   } else {
     // writeReport();
@@ -746,22 +685,5 @@ export const decrypt = (hash: HashedPassword): string => {
         timezone: "Europe/Paris",
       }
     );
-
-    // const log: SnitchLog = {
-    //   durationInSeconds: 30,
-    //   endDate: new Date(),
-    //   startDate: new Date(),
-    //   failure: ["failure"],
-    //   success: ["success"],
-    //   report: [],
-    // };
-    // await mailSender(log);
   }
 })();
-
-// .then(async () => {
-//   const credentials = await aquireCredentials();
-//   console.log(credentials);
-
-//   await DBinsertCredentials(credentials);
-// });
