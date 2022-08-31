@@ -2,9 +2,9 @@ import puppeteer from "puppeteer";
 
 export const initRessourcesLinks = async (): Promise<string[]> => {
   const publicAccessPages = [
-    "https://bibliotheques.univ-pau.fr/fr/documentation/bases-de-donnees.html",
-    "https://bibliotheques.univ-pau.fr/fr/documentation/livres-electroniques.html",
-    "https://bibliotheques.univ-pau.fr/fr/documentation/encyclopedies-et-dictionnaires.html",
+    "https://bibliotheques.univ-pau.fr/fr/documentation/ressources-electroniques.html",
+    "https://bibliotheques.univ-pau.fr/fr/documentation/ressources-electroniques/e-books.html",
+    "https://bibliotheques.univ-pau.fr/fr/documentation/ressources-electroniques/dictionnaires.html",
   ];
 
   let ressourcesLink: (string | null)[] = [];
